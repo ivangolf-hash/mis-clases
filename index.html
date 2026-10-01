@@ -1,0 +1,775 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Horas Pádel">
+<meta name="theme-color" content="#EEF2F6">
+<title>Horas Pádel</title>
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=4">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF2F6; --card:#fff; --ink:#0F2133; --muted:#6B7A8C; --line:#DDE4EC;
+  --court:#1D56A0; --court-deep:#0F3768; --ball:#D7EA3A; --ball-deep:#B9CC1E;
+  --red:#D6453D; --green:#2E9D5B;
+  --num:"Barlow Condensed","SF Pro Display",-apple-system,"Helvetica Neue",sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
+body{padding-top:env(safe-area-inset-top,0)}
+.app{max-width:520px;margin:0 auto;padding:10px 16px calc(110px + env(safe-area-inset-bottom,0px))}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--court);outline-offset:2px}
+[hidden]{display:none!important}
+
+/* Cabecera */
+.top{display:flex;align-items:center;justify-content:space-between;padding:4px 0 12px;min-height:50px}
+.month{display:flex;align-items:center;gap:2px}
+.top h1{margin:0;font-size:22px;font-weight:700;letter-spacing:-.01em}
+.month h1{min-width:168px;text-align:center}
+.top h1::first-letter{text-transform:uppercase}
+.icon-btn{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--court)}
+.icon-btn:active{background:#dfe6ee}
+.icon-btn:disabled{opacity:.3}
+.gear{width:44px;height:44px;border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(15,33,51,.08);display:grid;place-items:center;color:var(--court)}
+.gear:active{transform:rotate(30deg)}
+.topR{display:flex;align-items:center;gap:6px}
+.cloud{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;color:var(--green)}
+.cloud .ck{opacity:1}
+.cloud.busy{color:var(--court)} .cloud.busy svg{animation:pulse 1s ease-in-out infinite}
+.cloud.busy .ck,.cloud.err .ck{opacity:0}
+.cloud.err{color:var(--red)}
+@keyframes pulse{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.cloud.busy svg{animation:none}}
+.syncbox{background:#F7F9FB;border-radius:14px;padding:14px;margin-top:4px}
+.syncbox h4{margin:0 0 4px;font-size:16px}
+.syncstate{font-size:14px;font-weight:600;margin:0 0 10px}
+.syncstate.ok{color:var(--green)} .syncstate.err{color:var(--red)} .syncstate.off{color:var(--muted)} .syncstate.busy{color:var(--court)}
+
+/* Pista (marcador principal) */
+.court{position:relative;overflow:hidden;border-radius:26px;background:radial-gradient(120% 90% at 20% 0%,#2A6BC0 0%,var(--court) 45%,var(--court-deep) 100%);color:#fff;padding:24px 22px 20px;box-shadow:0 14px 34px rgba(18,62,120,.35)}
+.court svg.lines{position:absolute;inset:0;width:100%;height:100%;opacity:.14;pointer-events:none}
+.court .row{position:relative;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.big{font-family:var(--num);font-weight:700;font-size:120px;line-height:.8;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.big small{font-size:40px;margin-left:4px;opacity:.8}
+.cap{font-size:15px;opacity:.85;margin:10px 0 2px}
+.money{padding:0;text-align:left;font-family:var(--num);font-size:30px;font-weight:700;color:var(--ball);line-height:1.05}
+.money.off{font-family:inherit;font-size:14px;font-weight:600;color:rgba(255,255,255,.7);text-decoration:underline;text-underline-offset:3px}
+.est{text-align:right;padding-top:6px}
+.est span{display:block;font-size:14px;opacity:.85}
+.est b{display:block;font-family:var(--num);font-size:46px;line-height:1}
+.est em{display:block;font-style:normal;font-size:14px;opacity:.85;margin-top:4px}
+.track{position:relative;height:16px;border-radius:8px;background:rgba(255,255,255,.16);margin:24px 12px 0 2px}
+.tick{position:absolute;top:3px;bottom:3px;width:2px;margin-left:-1px;background:rgba(255,255,255,.35);border-radius:1px}
+.fill{position:absolute;left:0;top:0;bottom:0;border-radius:8px;background:linear-gradient(90deg,#C3D72A,var(--ball));transition:width 1s cubic-bezier(.2,.8,.2,1)}
+.ballmark{position:absolute;top:50%;width:32px;height:32px;margin:-16px 0 0 -16px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#F4FB9C,var(--ball) 50%,#9DAE10);box-shadow:0 4px 10px rgba(0,0,0,.35);transition:left 1s cubic-bezier(.2,.8,.2,1)}
+.ballmark::after{content:"";position:absolute;inset:4px;border-radius:50%;border:2.5px solid rgba(255,255,255,.85);border-left-color:transparent;border-bottom-color:transparent;transform:rotate(20deg)}
+.pct{position:relative;display:flex;justify-content:space-between;font-size:13px;opacity:.8;margin:10px 2px 0}
+.split{position:relative;display:grid;grid-template-columns:1fr 1.4fr 1.25fr;gap:8px;margin-top:18px}
+.split>*{background:rgba(255,255,255,.11);border-radius:14px;padding:10px 11px;text-align:left;color:#fff}
+.split span{display:block;font-size:12px;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.split b{font-family:var(--num);font-size:26px;font-weight:700;white-space:nowrap}
+.split .earn b{color:var(--ball)}
+@media (prefers-reduced-motion:reduce){.fill,.ballmark{transition:none}}
+
+/* Acumulado total */
+.bank{background:var(--card);border-radius:20px;padding:16px 18px;margin-top:14px;box-shadow:0 4px 14px rgba(15,33,51,.06)}
+.bank h3{margin:0 0 12px;font-size:15px;color:var(--muted);font-weight:600}
+.brow+.brow{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.bhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.bhead span{font-size:15px;font-weight:600}
+.bhead b{font-family:var(--num);font-size:30px;font-weight:700;color:var(--court);white-space:nowrap}
+.bhead b small{font-size:18px;color:var(--muted);font-weight:600}
+.btrack{height:12px;border-radius:6px;background:#E3ECF7;margin:8px 0 6px;overflow:hidden}
+.btrack i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,var(--court),#3A7BD0);transition:width 1s cubic-bezier(.2,.8,.2,1)}
+.btrack.full i{background:linear-gradient(90deg,var(--green),#45B871)}
+.bfoot{display:flex;justify-content:space-between;font-size:13px;color:var(--muted)}
+.bfoot em{font-style:normal;font-weight:600;color:var(--green)}
+.brow.ext .bhead b{color:#6C7A00}
+.btrack.comp{background:#F1F7C9}
+.btrack.comp i{background:linear-gradient(90deg,#B9CC1E,var(--ball))}
+
+/* Secciones */
+h2{font-size:17px;margin:26px 4px 10px;display:flex;justify-content:space-between;align-items:baseline}
+h2 span{font-size:14px;font-weight:500;color:var(--muted)}
+.list{background:var(--card);border-radius:16px;overflow:hidden}
+.item{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 14px;border-bottom:1px solid var(--line)}
+.item:last-child{border-bottom:0}
+.item:active{background:#f4f7fa}
+.badge{flex:none;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-weight:700;font-size:14px}
+.badge.sat{background:#E3ECF7;color:var(--court)}
+.badge.ext{background:#F1F7C9;color:#6C7A00}
+.item .txt{flex:1;min-width:0}
+.item .t1{display:block;font-size:15px;font-weight:600}
+.item .t2{display:block;font-size:13px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .h{font-family:var(--num);font-size:22px;font-weight:700;text-align:right;white-space:nowrap}
+.chip{display:block;font-family:-apple-system,sans-serif;font-size:11px;font-weight:600;margin-top:1px}
+.chip.done{color:var(--green)} .chip.pend{color:var(--muted)} .chip.off{color:var(--red)}
+.item.off .t1,.item.off .h{text-decoration:line-through;color:var(--muted)}
+.empty{padding:22px 16px;text-align:center;color:var(--muted);font-size:14px}
+
+/* Histórico */
+.hist-sum{background:linear-gradient(160deg,var(--court),var(--court-deep));color:#fff;border-radius:22px;padding:18px 20px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hist-sum span{display:block;font-size:13px;opacity:.85}
+.hist-sum b{font-family:var(--num);font-size:38px;line-height:1.05}
+.hist-sum .y{color:var(--ball)}
+.chart{background:var(--card);border-radius:18px;padding:18px 10px 12px;display:flex;align-items:flex-end;gap:6px;height:250px;margin-top:12px}
+.col{flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;gap:5px;min-width:0}
+.col .v{font-family:var(--num);font-size:16px;font-weight:700}
+.bar{position:relative;width:100%;max-width:40px;border-radius:8px;border:2px dashed #C7D3E0;min-height:4px;display:flex;align-items:flex-end;overflow:hidden}
+.bar i{display:block;width:100%;background:var(--court);border-radius:5px 5px 0 0}
+.col.cur .bar i{background:var(--ball)}
+.col .m{font-size:12px;color:var(--muted)}
+.legend{display:flex;gap:16px;font-size:12px;color:var(--muted);margin:8px 6px 0}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.mrow .badge{background:#E3ECF7;color:var(--court);font-family:var(--num);font-size:16px}
+.mrow .h small{display:block;font-family:-apple-system,sans-serif;font-size:12px;font-weight:600;color:var(--green)}
+
+/* Barra inferior */
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:5;background:rgba(255,255,255,.92);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border-top:1px solid var(--line);padding:6px 0 calc(6px + env(safe-area-inset-bottom,0px))}
+.tabbar .inner{max-width:520px;margin:0 auto;display:grid;grid-template-columns:1fr auto 1fr;align-items:center}
+.tab{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:600;color:var(--muted);padding:4px 0}
+.tab.on{color:var(--court)}
+.add{width:62px;height:62px;margin-top:-26px;border-radius:50%;display:grid;place-items:center;color:var(--ink);background:radial-gradient(circle at 35% 30%,#F0FA8A,var(--ball) 55%,var(--ball-deep));box-shadow:0 8px 20px rgba(15,33,51,.28),0 0 0 5px var(--bg)}
+.add:active{transform:scale(.95)}
+
+/* Hojas */
+.scrim{position:fixed;inset:0;background:rgba(15,33,51,.4);opacity:0;pointer-events:none;transition:opacity .25s;z-index:10}
+.scrim.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;background:var(--card);border-radius:22px 22px 0 0;padding:10px 18px calc(20px + env(safe-area-inset-bottom,0px));transform:translateY(105%);transition:transform .3s cubic-bezier(.2,.8,.2,1);z-index:11;max-height:92vh;overflow:auto}
+.sheet.on{transform:none}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 12px}
+.sheet h3{margin:0 0 14px;font-size:19px}
+.shead{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.shead h3{margin:0}
+.xbtn{width:34px;height:34px;border-radius:50%;background:#EEF2F6;display:grid;place-items:center;color:var(--muted)}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:13px;color:var(--muted);margin:0 0 5px 2px}
+.field input{width:100%;font:inherit;font-size:17px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#F7F9FB;color:var(--ink);-webkit-appearance:none;appearance:none;min-height:48px}
+.rate{position:relative}
+.rate input{font-family:var(--num);font-size:34px;font-weight:700;padding:10px 70px 10px 14px}
+.rate::after{content:"€ / hora";position:absolute;right:14px;bottom:21px;color:var(--muted);font-size:15px;pointer-events:none}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.preview{background:#F1F7C9;border-radius:12px;padding:12px;text-align:center;margin:4px 0 14px;font-size:14px}
+.preview b{font-family:var(--num);font-size:28px;display:block}
+.quick{display:flex;gap:8px;flex-wrap:wrap;margin:-4px 0 14px}
+.quick button{padding:7px 12px;border-radius:16px;background:#E3ECF7;color:var(--court);font-size:14px;font-weight:600}
+.actions{display:flex;gap:10px}
+.btn{flex:1;padding:14px;border-radius:14px;font-weight:700;font-size:16px;background:var(--court);color:#fff}
+.btn.ghost{background:#EEF2F6;color:var(--ink)}
+.btn.danger{background:#FBE7E6;color:var(--red)}
+.note{font-size:13px;color:var(--muted);margin:6px 2px 14px;line-height:1.4}
+.sep{height:1px;background:var(--line);margin:6px 0 16px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Vista: Mes -->
+  <main id="viewMonth">
+    <header class="top">
+      <div class="month">
+        <button class="icon-btn" id="prev" aria-label="Mes anterior"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <h1 id="monthTitle"></h1>
+        <button class="icon-btn" id="next" aria-label="Mes siguiente"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 5l7 7-7 7"/></svg></button>
+      </div>
+      <div class="topR"><button class="cloud" id="cloud" data-settings aria-label="Estado de la sincronización" hidden><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a5 5 0 0 1-.6-9.96A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9z"/><path class="ck" d="M9.5 13.5l2 2 3.5-3.5"/></svg></button>
+      <button class="gear" data-settings aria-label="Ajustes y precio por hora"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></div>
+    </header>
+
+    <section class="court" aria-live="polite">
+      <svg class="lines" viewBox="0 0 200 120" preserveAspectRatio="none" fill="none" stroke="#fff" stroke-width="1.2">
+        <rect x="6" y="6" width="188" height="108"/><line x1="100" y1="2" x2="100" y2="118" stroke-width="2.4"/>
+        <line x1="48" y1="6" x2="48" y2="114"/><line x1="152" y1="6" x2="152" y2="114"/><line x1="48" y1="60" x2="152" y2="60"/>
+      </svg>
+      <div class="row">
+        <div>
+          <div class="big" id="doneH">0<small>h</small></div>
+          <p class="cap" id="cap">hechas hasta hoy</p>
+          <button class="money" id="doneE" data-settings></button>
+        </div>
+        <div class="est"><span>estimadas</span><b id="estH">0 h</b></div>
+      </div>
+      <div class="track" id="track"><div class="fill" id="fill"></div><div class="ballmark" id="ball"></div></div>
+      <div class="pct"><span id="pctLbl">0 % del mes</span><span id="leftLbl"></span></div>
+      <div class="split">
+        <div><span>Sábados</span><b id="sSat">0</b></div>
+        <div><span>Complementarias</span><b id="sExt">0</b></div>
+        <button class="earn" data-settings><span>Ganado compl.</span><b id="sMoney">–</b></button>
+      </div>
+    </section>
+
+    <section class="bank" aria-label="Acumulado de todos los meses">
+      <h3>Acumulado de todos los meses</h3>
+      <div class="brow">
+        <div class="bhead"><span>Horas de sábados</span><b id="bSat">0<small> / 176 h</small></b></div>
+        <div class="btrack" id="bSatTrack"><i id="bSatFill"></i></div>
+        <div class="bfoot"><span id="bSatLeft">quedan 176 h</span></div>
+      </div>
+      <div class="brow ext">
+        <div class="bhead"><span>Horas complementarias</span><b id="bExt">0<small> / 79 h</small></b></div>
+        <div class="btrack comp" id="bExtTrack"><i id="bExtFill"></i></div>
+        <div class="bfoot"><span id="bExtLeft">quedan 79 h</span></div>
+      </div>
+    </section>
+
+    <h2>Clases del mes <span id="countLbl"></span></h2>
+    <div class="list" id="list"></div>
+  </main>
+
+  <!-- Vista: Histórico -->
+  <main id="viewHist" hidden>
+    <header class="top">
+      <h1>Histórico</h1>
+      <button class="gear" data-settings aria-label="Ajustes y precio por hora"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+    </header>
+    <section class="hist-sum">
+      <div><span>Horas totales</span><b id="hTotH">0</b></div>
+      <div><span>Ganado en complementarias</span><b class="y" id="hTotE">–</b></div>
+    </section>
+    <div class="chart" id="chart"></div>
+    <div class="legend"><span><i style="background:var(--court)"></i>Hechas</span><span><i style="background:var(--ball)"></i>Mes actual</span><span><i style="border:2px dashed #C7D3E0"></i>Estimadas</span></div>
+    <h2>Por meses <span>toca uno para ver el detalle</span></h2>
+    <div class="list" id="monthList"></div>
+  </main>
+</div>
+
+<nav class="tabbar">
+  <div class="inner">
+    <button class="tab on" id="tabMonth"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Mes</button>
+    <button class="add" id="addBtn" aria-label="Añadir horas"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+    <button class="tab" id="tabHist"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Histórico</button>
+  </div>
+</nav>
+
+<div class="scrim" id="scrim"></div>
+
+<div class="sheet" id="sheetEntry" role="dialog" aria-modal="true" aria-labelledby="entryTitle">
+  <div class="grab"></div>
+  <h3 id="entryTitle">Añadir horas</h3>
+  <div class="field"><label for="fDate">Día</label><input type="date" id="fDate"></div>
+  <div class="quick" id="quick">
+    <button data-s="16:30" data-e="21:30">16:30–21:30</button>
+    <button data-s="17:30" data-e="21:30">17:30–21:30</button>
+    <button data-s="09:30" data-e="13:30">9:30–13:30</button>
+  </div>
+  <div class="two">
+    <div class="field"><label for="fStart">Inicio</label><input type="time" id="fStart" value="16:30"></div>
+    <div class="field"><label for="fEnd">Fin</label><input type="time" id="fEnd" value="21:30"></div>
+  </div>
+  <div class="field"><label for="fNote">Nota (opcional)</label><input type="text" id="fNote" placeholder="Ej. cubro a Marta"></div>
+  <div class="preview">Total<b id="fHours">5 h</b></div>
+  <div class="actions">
+    <button class="btn danger" id="delEntry" hidden>Eliminar</button>
+    <button class="btn" id="saveEntry">Guardar</button>
+  </div>
+</div>
+
+<div class="sheet" id="sheetSat" role="dialog" aria-modal="true" aria-labelledby="satTitle">
+  <div class="grab"></div>
+  <h3 id="satTitle">Sábado</h3>
+  <p class="note" id="satNote"></p>
+  <div class="actions">
+    <button class="btn ghost" id="satClose">Cerrar</button>
+    <button class="btn" id="satToggle">Marcar sin clase</button>
+  </div>
+</div>
+
+<div class="sheet" id="sheetSettings" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+  <div class="grab"></div>
+  <div class="shead"><h3 id="setTitle">Ajustes</h3><button class="xbtn" data-close aria-label="Cerrar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="field rate"><label for="sRate">Lo que cobras por hora</label><input type="text" id="sRate" inputmode="decimal" placeholder="0"></div>
+  <div class="sep"></div>
+  <div class="two">
+    <div class="field"><label for="sStart">Sábados desde</label><input type="time" id="sStart"></div>
+    <div class="field"><label for="sEnd">hasta</label><input type="time" id="sEnd"></div>
+  </div>
+  <div class="field"><label for="sFrom">Contar sábados a partir del</label><input type="date" id="sFrom"></div>
+  <div class="two">
+    <div class="field"><label for="sMax">Máx. horas sábados</label><input type="number" id="sMax" inputmode="numeric" min="0"></div>
+    <div class="field"><label for="sCMax">Máx. complementarias</label><input type="number" id="sCMax" inputmode="numeric" min="0"></div>
+  </div>
+  <p class="note">Los cambios de precio y de horario se aplican a todos los meses, también a los pasados.</p>
+  <div class="actions"><button class="btn" id="saveSettings">Guardar ajustes</button></div>
+  <div class="sep" style="margin-top:20px"></div>
+  <div class="syncbox">
+    <h4>Sincronizar entre móviles</h4>
+    <p class="syncstate off" id="syncState">Desactivada</p>
+    <div id="syncOff">
+      <div class="field"><label for="sToken">Clave de GitHub (token)</label><input type="password" id="sToken" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="ghp_…"></div>
+      <div class="actions"><button class="btn" id="syncConnect">Conectar este móvil</button></div>
+    </div>
+    <div id="syncOn" hidden>
+      <div class="actions"><button class="btn danger" id="syncDisconnect">Desconectar</button><button class="btn ghost" id="syncNowBtn">Sincronizar ahora</button></div>
+    </div>
+    <p class="note" style="margin-bottom:0">Tus datos se guardan en una copia privada de tu cuenta de GitHub. Pon la misma clave en cada móvil y verás las mismas horas en todos.</p>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const KEY = "horas-padel-v1";
+  const FIRST_MONTH = {y:2026, m:8}; // septiembre 2026 (mes 0-index)
+
+  const DEFAULT = {
+    settings:{ rate:8.6, satStart:"09:30", satEnd:"13:30", from:"2026-09-26", satMax:176, compMax:79 },
+    extras:[ { id:"seed1", date:"2026-09-30", start:"16:30", end:"21:30", note:"" } ],
+    satOff:{}
+  };
+
+  // Cada cambio lleva una marca de tiempo (u / su) para poder mezclar los datos de varios móviles
+  function normalize(d){
+    d = d || {};
+    const out = Object.assign(structuredClone(DEFAULT), d);
+    out.settings = Object.assign({}, DEFAULT.settings, d.settings || {});
+    if(out.settings.su == null) out.settings.su = 0;
+    out.extras = (out.extras || []).map(e => Object.assign({u:0}, e));
+    const so = {};
+    Object.entries(out.satOff || {}).forEach(([k,v]) => {
+      so[k] = v === true ? {off:true, u:0} : (v && typeof v === "object" ? {off:!!v.off, u:v.u||0} : {off:false, u:0});
+    });
+    out.satOff = so;
+    return out;
+  }
+
+  function load(){
+    try{
+      const raw = localStorage.getItem(KEY);
+      if(raw){
+        const d = JSON.parse(raw);
+        const out = normalize(d);
+        const s1 = (out.extras||[]).find(e => e.id==="seed1");
+        if(s1 && s1.start==="17:30" && !out.fix30){ s1.start = "16:30"; }
+        out.fix30 = true;
+        if(!out.fixRate){ out.settings.rate = 8.6; out.fixRate = true; }
+        return out;
+      }
+    }catch(e){}
+    return normalize(DEFAULT);
+  }
+  function saveLocal(){ try{ localStorage.setItem(KEY, JSON.stringify(data)); }catch(e){} }
+  let syncTimer = null;
+  function save(){ saveLocal(); clearTimeout(syncTimer); syncTimer = setTimeout(() => syncNow(), 1200); }
+
+  let data = load();
+  const now0 = new Date();
+  let view = { y: now0.getFullYear(), m: now0.getMonth() };
+  if(view.y*12+view.m < FIRST_MONTH.y*12+FIRST_MONTH.m) view = {...FIRST_MONTH};
+  let tab = "month";
+
+  // Utilidades
+  const $ = id => document.getElementById(id);
+  const pad = n => String(n).padStart(2,"0");
+  const ymd = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+  const parse = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y,m-1,d); };
+  const toMin = t => { const [h,m] = t.split(":").map(Number); return h*60+m; };
+  const dur = (s,e) => { let d = toMin(e)-toMin(s); if(d<=0) d += 1440; return d/60; };
+  const at = (dateStr,time) => { const d = parse(dateStr); const m = toMin(time); d.setHours(Math.floor(m/60), m%60, 0, 0); return d; };
+  const endAt = (dateStr,s,e) => { const d = at(dateStr,e); if(toMin(e)<=toMin(s)) d.setDate(d.getDate()+1); return d; };
+  const fmtH = h => { const r = Math.round(h*100)/100; return Number.isInteger(r) ? String(r) : String(r).replace(".",","); };
+  const fmtT = t => t.replace(/^0/,"");
+  const fmtE = v => { const r = Math.round(v*100)/100; return r.toLocaleString("es-ES",{minimumFractionDigits:Number.isInteger(r)?0:2, maximumFractionDigits:2})+" €"; };
+  const dayLbl = s => parse(s).toLocaleDateString("es-ES",{weekday:"short",day:"numeric",month:"short"}).replace(".","");
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const cap = s => s.charAt(0).toUpperCase()+s.slice(1);
+  const rate = () => Number(data.settings.rate)||0;
+  const idx = (y,m) => y*12+m;
+  const fromIdx = k => ({y:Math.floor(k/12), m:k%12});
+
+  function monthStats(y,m){
+    const now = new Date();
+    const st = data.settings;
+    const satH = dur(st.satStart, st.satEnd);
+    const items = [];
+    const days = new Date(y,m+1,0).getDate();
+    for(let d=1; d<=days; d++){
+      const dt = new Date(y,m,d);
+      if(dt.getDay()!==6) continue;
+      const s = ymd(dt);
+      if(s < st.from) continue;
+      const off = !!(data.satOff[s] && data.satOff[s].off);
+      const done = !off && now >= endAt(s, st.satStart, st.satEnd);
+      items.push({type:"sat", date:s, start:st.satStart, end:st.satEnd, hours:satH, off, done});
+    }
+    const pre = y+"-"+pad(m+1)+"-";
+    data.extras.filter(e => !e.del && e.date.startsWith(pre)).forEach(e => {
+      items.push({type:"ext", id:e.id, date:e.date, start:e.start, end:e.end, note:e.note, hours:dur(e.start,e.end), off:false, done: now >= endAt(e.date,e.start,e.end)});
+    });
+    items.sort((a,b) => (a.date+a.start).localeCompare(b.date+b.start));
+    let satDone=0, satEst=0, extDone=0, extEst=0;
+    items.forEach(i => {
+      if(i.off) return;
+      if(i.type==="sat"){ satEst+=i.hours; if(i.done) satDone+=i.hours; }
+      else { extEst+=i.hours; if(i.done) extDone+=i.hours; }
+    });
+    return {items, satDone, satEst, extDone, extEst, done:satDone+extDone, est:satEst+extEst};
+  }
+
+  function totals(){
+    const now = new Date();
+    const end = idx(now.getFullYear(), now.getMonth());
+    let sat=0, ext=0, nExt=0;
+    for(let k=idx(FIRST_MONTH.y,FIRST_MONTH.m); k<=end; k++){
+      const {y,m} = fromIdx(k); const st = monthStats(y,m);
+      sat += st.satDone; ext += st.extDone;
+      nExt += st.items.filter(i=>i.type==="ext" && i.done).length;
+    }
+    return {sat, ext, nExt};
+  }
+
+  function renderBank(){
+    const t = totals();
+    const max = Number(data.settings.satMax)||176;
+    $("bSat").innerHTML = fmtH(t.sat)+"<small> / "+fmtH(max)+" h</small>";
+    $("bSatFill").style.width = Math.min(100, t.sat/max*100)+"%";
+    $("bSatTrack").classList.toggle("full", t.sat>=max);
+    const left = max - t.sat;
+    $("bSatLeft").textContent = left>0 ? "quedan "+fmtH(left)+" h ("+Math.round(t.sat/max*100)+" %)" : (left===0 ? "máximo alcanzado" : "te pasas "+fmtH(-left)+" h del máximo");
+    const cmax = Number(data.settings.compMax)||79;
+    $("bExt").innerHTML = fmtH(t.ext)+"<small> / "+fmtH(cmax)+" h</small>";
+    $("bExtFill").style.width = Math.min(100, t.ext/cmax*100)+"%";
+    $("bExtTrack").classList.toggle("full", t.ext>=cmax);
+    const cleft = cmax - t.ext;
+    $("bExtLeft").textContent = cleft>0 ? "quedan "+fmtH(cleft)+" h ("+Math.round(t.ext/cmax*100)+" %)" : (cleft===0 ? "máximo alcanzado" : "te pasas "+fmtH(-cleft)+" h del máximo");
+  }
+
+  function render(){ tab==="month" ? renderMonth() : renderHist(); }
+
+  function renderMonth(){
+    const {y,m} = view;
+    $("monthTitle").textContent = new Date(y,m,1).toLocaleDateString("es-ES",{month:"long",year:"numeric"});
+    $("prev").disabled = idx(y,m) <= idx(FIRST_MONTH.y,FIRST_MONTH.m);
+
+    const s = monthStats(y,m);
+    const r = rate();
+    const now = new Date();
+    const isCur = idx(y,m) === idx(now.getFullYear(),now.getMonth());
+    const isPast = idx(y,m) < idx(now.getFullYear(),now.getMonth());
+
+    $("doneH").innerHTML = fmtH(s.done)+"<small>h</small>";
+    $("cap").textContent = isPast ? "hechas en el mes" : isCur ? "hechas hasta hoy" : "aún por llegar";
+    const de = $("doneE");
+    if(r){ de.textContent = fmtE(s.done*r); de.classList.remove("off"); }
+    else { de.textContent = "Pon tu precio por hora"; de.classList.add("off"); }
+
+    $("estH").textContent = fmtH(s.est)+" h";
+
+    const pct = s.est>0 ? Math.min(100, s.done/s.est*100) : 0;
+    $("fill").style.width = pct+"%";
+    $("ball").style.left = pct+"%";
+    // Marcas en la barra donde termina cada clase
+    const track = $("track");
+    track.querySelectorAll(".tick").forEach(t=>t.remove());
+    if(s.est>0){
+      let acc = 0;
+      s.items.filter(i=>!i.off).forEach((i,n,arr) => {
+        acc += i.hours;
+        if(n===arr.length-1) return;
+        const t = document.createElement("span"); t.className="tick"; t.style.left=(acc/s.est*100)+"%"; track.insertBefore(t, $("fill"));
+      });
+    }
+    $("pctLbl").textContent = Math.round(pct)+" % del mes";
+    const left = Math.max(0, s.est - s.done);
+    $("leftLbl").textContent = left>0 ? "faltan "+fmtH(left)+" h" : (s.est>0 ? "mes completo" : "");
+
+    $("sSat").textContent = fmtH(s.satDone)+(s.satEst!==s.satDone ? "/"+fmtH(s.satEst) : "");
+    $("sExt").textContent = fmtH(s.extDone)+(s.extEst!==s.extDone ? "/"+fmtH(s.extEst) : "");
+    $("sMoney").textContent = fmtE(s.extDone*r);
+    renderBank();
+
+    const n = s.items.filter(i=>!i.off).length;
+    $("countLbl").textContent = n ? n+(n===1?" clase":" clases") : "";
+    const list = $("list");
+    if(!s.items.length){
+      list.innerHTML = '<div class="empty">No hay clases este mes. Pulsa el botón + para apuntar una.</div>';
+    } else {
+      list.innerHTML = s.items.map((i,k) => {
+        const chip = i.off ? '<span class="chip off">Sin clase</span>' : i.done ? '<span class="chip done">Hecha</span>' : '<span class="chip pend">Pendiente</span>';
+        const t2 = fmtT(i.start)+"–"+fmtT(i.end)+(i.type==="sat" ? ", horario fijo" : (i.note ? ", "+esc(i.note) : ", complementaria"));
+        return '<button class="item'+(i.off?' off':'')+'" data-k="'+k+'">'+
+          '<span class="badge '+(i.type==="sat"?"sat":"ext")+'">'+(i.type==="sat"?"S":"+")+'</span>'+
+          '<span class="txt"><span class="t1">'+cap(dayLbl(i.date))+'</span><span class="t2">'+t2+'</span></span>'+
+          '<span class="h">'+fmtH(i.hours)+' h'+chip+'</span></button>';
+      }).join("");
+      list.querySelectorAll(".item").forEach(b => b.addEventListener("click", () => openItem(s.items[+b.dataset.k])));
+    }
+  }
+
+  function renderHist(){
+    const now = new Date();
+    const curIdx = idx(now.getFullYear(),now.getMonth());
+    const firstIdx = idx(FIRST_MONTH.y,FIRST_MONTH.m);
+    const endIdx = Math.max(curIdx, firstIdx);
+    const r = rate();
+    const all = [];
+    for(let k=firstIdx; k<=endIdx; k++){ const {y,m}=fromIdx(k); const st=monthStats(y,m); all.push({y,m,k,done:st.done,est:st.est,ext:st.extDone}); }
+    const tot = all.reduce((a,c)=>a+c.done,0);
+    $("hTotH").textContent = fmtH(tot)+" h";
+    const totExt = all.reduce((a,c)=>a+c.ext,0);
+    $("hTotE").textContent = r ? fmtE(totExt*r) : "–";
+
+    const cols = all.slice(-12);
+    const max = Math.max(1, ...cols.map(c=>Math.max(c.done,c.est)));
+    const H = 170;
+    $("chart").innerHTML = cols.map(c => {
+      const bh = Math.max(4, c.est/max*H);
+      const fh = c.est>0 ? c.done/c.est*100 : 0;
+      const lbl = new Date(c.y,c.m,1).toLocaleDateString("es-ES",{month:"short"}).replace(".","");
+      return '<button class="col'+(c.k===curIdx?" cur":"")+'" data-k="'+c.k+'" aria-label="'+lbl+': '+fmtH(c.done)+' horas"><span class="v">'+fmtH(c.done)+'</span>'+
+        '<span class="bar" style="height:'+bh+'px"><i style="height:'+fh+'%"></i></span><span class="m">'+lbl+'</span></button>';
+    }).join("");
+
+    $("monthList").innerHTML = all.slice().reverse().map(c => {
+      const name = cap(new Date(c.y,c.m,1).toLocaleDateString("es-ES",{month:"long",year:"numeric"}));
+      const extra = c.k===curIdx ? "en curso, "+fmtH(c.est)+" h estimadas" : (c.k>curIdx ? "por llegar" : "cerrado");
+      return '<button class="item mrow" data-k="'+c.k+'"><span class="badge">'+(c.m+1)+'</span>'+
+        '<span class="txt"><span class="t1">'+name+'</span><span class="t2">'+extra+'</span></span>'+
+        '<span class="h">'+fmtH(c.done)+' h</span></button>';
+    }).join("");
+
+    document.querySelectorAll("#chart .col, #monthList .item").forEach(b => b.addEventListener("click", () => { view = fromIdx(+b.dataset.k); setTab("month"); }));
+  }
+
+  // Pestañas
+  function setTab(t){
+    tab = t;
+    $("viewMonth").hidden = t!=="month";
+    $("viewHist").hidden = t!=="hist";
+    $("tabMonth").classList.toggle("on", t==="month");
+    $("tabHist").classList.toggle("on", t==="hist");
+    window.scrollTo(0,0);
+    render();
+  }
+  $("tabMonth").addEventListener("click", () => setTab("month"));
+  $("tabHist").addEventListener("click", () => setTab("hist"));
+
+  // Hojas
+  let openSheet = null;
+  function show(id){ openSheet = $(id); $("scrim").classList.add("on"); openSheet.classList.add("on"); }
+  function hide(){ if(openSheet) openSheet.classList.remove("on"); $("scrim").classList.remove("on"); openSheet = null; }
+  $("scrim").addEventListener("click", hide);
+  document.querySelectorAll("[data-close]").forEach(b => b.addEventListener("click", hide));
+  document.addEventListener("keydown", e => { if(e.key==="Escape") hide(); });
+
+  // Añadir / editar horas complementarias
+  let editingId = null;
+  function updatePreview(){
+    const s=$("fStart").value, e=$("fEnd").value;
+    if(!(s&&e)){ $("fHours").textContent="–"; return; }
+    const h = dur(s,e); $("fHours").textContent = fmtH(h)+" h"+(rate() ? "  ·  "+fmtE(h*rate()) : "");
+  }
+  ["fStart","fEnd"].forEach(id => $(id).addEventListener("input", updatePreview));
+  $("quick").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; $("fStart").value=b.dataset.s; $("fEnd").value=b.dataset.e; updatePreview(); });
+
+  function openEntry(entry){
+    editingId = entry ? entry.id : null;
+    $("entryTitle").textContent = entry ? "Editar horas" : "Añadir horas";
+    const now = new Date();
+    const inView = view.y===now.getFullYear() && view.m===now.getMonth();
+    $("fDate").value = entry ? entry.date : (inView || tab==="hist" ? ymd(now) : ymd(new Date(view.y,view.m,1)));
+    $("fStart").value = entry ? entry.start : "16:30";
+    $("fEnd").value = entry ? entry.end : "21:30";
+    $("fNote").value = entry ? (entry.note||"") : "";
+    $("delEntry").hidden = !entry;
+    updatePreview();
+    show("sheetEntry");
+  }
+  $("addBtn").addEventListener("click", () => openEntry(null));
+  $("saveEntry").addEventListener("click", () => {
+    const date=$("fDate").value, start=$("fStart").value, end=$("fEnd").value;
+    if(!date || !start || !end){ alert("Indica el día, la hora de inicio y la de fin."); return; }
+    const rec = {date, start, end, note:$("fNote").value.trim(), u:Date.now()};
+    if(editingId){ Object.assign(data.extras.find(e=>e.id===editingId), rec); }
+    else { data.extras.push({id:Date.now().toString(36), ...rec}); }
+    save();
+    view = fromIdx(idx(parse(date).getFullYear(), parse(date).getMonth()));
+    hide(); setTab("month");
+  });
+  $("delEntry").addEventListener("click", () => {
+    if(!confirm("¿Eliminar estas horas?")) return;
+    const e = data.extras.find(x=>x.id===editingId);
+    if(e){ e.del = true; e.u = Date.now(); }
+    save(); hide(); render();
+  });
+
+  // Sábados
+  let satDate = null;
+  function openItem(i){
+    if(i.type==="ext"){ openEntry(data.extras.find(e=>e.id===i.id)); return; }
+    satDate = i.date;
+    $("satTitle").textContent = cap(dayLbl(i.date));
+    $("satNote").textContent = i.off
+      ? "Este sábado está marcado sin clase y no suma horas."
+      : "Clase fija de "+fmtT(i.start)+" a "+fmtT(i.end)+". "+(i.done ? "Ya está sumada." : "Se sumará cuando termine.")+" Márcalo sin clase si fue festivo o no la diste.";
+    $("satToggle").textContent = i.off ? "Volver a contarlo" : "Marcar sin clase";
+    show("sheetSat");
+  }
+  $("satClose").addEventListener("click", hide);
+  $("satToggle").addEventListener("click", () => {
+    const cur = data.satOff[satDate];
+    data.satOff[satDate] = {off: !(cur && cur.off), u: Date.now()};
+    save(); hide(); render();
+  });
+
+  // Ajustes
+  function openSettings(){
+    const st = data.settings;
+    $("sRate").value = st.rate ? Number(st.rate).toFixed(2).replace(".",",") : ""; $("sStart").value = st.satStart; $("sEnd").value = st.satEnd; $("sFrom").value = st.from; $("sMax").value = st.satMax || 176; $("sCMax").value = st.compMax || 79;
+    paintSync();
+    show("sheetSettings");
+  }
+  document.querySelectorAll("[data-settings]").forEach(b => b.addEventListener("click", openSettings));
+  $("saveSettings").addEventListener("click", () => {
+    data.settings = {
+      rate: Math.max(0, parseFloat(String($("sRate").value).replace(",", ".")) || 0),
+      satStart: $("sStart").value || "09:30",
+      satEnd: $("sEnd").value || "13:30",
+      from: $("sFrom").value || "2026-09-26",
+      satMax: Math.max(1, parseFloat($("sMax").value) || 176),
+      compMax: Math.max(1, parseFloat($("sCMax").value) || 79),
+      su: Date.now()
+    };
+    save(); hide(); render();
+  });
+
+  // Navegación de meses
+  $("prev").addEventListener("click", () => { view = fromIdx(idx(view.y,view.m)-1); render(); });
+  $("next").addEventListener("click", () => { view = fromIdx(idx(view.y,view.m)+1); render(); });
+
+  // ---------- Sincronización con GitHub (gist secreto) ----------
+  const SKEY = "horas-padel-sync";
+  const FILE = "horas-padel.json";
+  let sync = (() => { try{ return JSON.parse(localStorage.getItem(SKEY)) || {}; }catch(e){ return {}; } })();
+  let syncState = sync.token ? (sync.err ? "err" : "ok") : "off";
+  let syncing = null, syncAgain = false;
+  function saveSync(){ try{ localStorage.setItem(SKEY, JSON.stringify(sync)); }catch(e){} }
+
+  function shared(d){
+    return { settings:d.settings, extras:[...d.extras].sort((a,b)=>a.id.localeCompare(b.id)),
+      satOff:Object.fromEntries(Object.keys(d.satOff).sort().map(k=>[k,d.satOff[k]])), fix30:true, fixRate:true };
+  }
+  const canon = d => JSON.stringify(shared(d));
+
+  // Mezcla: gana el cambio más reciente de cada clase, de cada sábado y de los ajustes
+  function merge(local, remote){
+    const ex = new Map();
+    local.extras.forEach(e => ex.set(e.id, e));
+    remote.extras.forEach(e => { const c = ex.get(e.id); if(!c || (e.u||0) >= (c.u||0)) ex.set(e.id, e); });
+    const so = Object.assign({}, local.satOff);
+    Object.entries(remote.satOff).forEach(([k,v]) => { if(!so[k] || (v.u||0) >= (so[k].u||0)) so[k] = v; });
+    const settings = (remote.settings.su||0) >= (local.settings.su||0) ? remote.settings : local.settings;
+    return normalize({settings, extras:[...ex.values()], satOff:so, fix30:true, fixRate:true});
+  }
+
+  async function api(path, method, body){
+    const r = await fetch("https://api.github.com"+path, {
+      method: method || "GET", cache: "no-store",
+      headers: { "Authorization":"Bearer "+sync.token, "Accept":"application/vnd.github+json", "Content-Type":"application/json" },
+      body: body ? JSON.stringify(body) : undefined
+    });
+    if(!r.ok){ const err = new Error("HTTP "+r.status); err.status = r.status; throw err; }
+    return r.status === 204 ? null : r.json();
+  }
+  async function findGist(){
+    for(let page=1; page<=10; page++){
+      const list = await api("/gists?per_page=100&page="+page);
+      const g = list.find(g => g.files && g.files[FILE]);
+      if(g) return g.id;
+      if(list.length < 100) break;
+    }
+    return null;
+  }
+
+  function syncNow(){
+    if(!sync.token) return Promise.resolve();
+    if(syncing){ syncAgain = true; return syncing; }
+    setSync("busy");
+    syncing = (async () => {
+      try{
+        if(!sync.gistId) sync.gistId = await findGist();
+        let remote = null;
+        if(sync.gistId){
+          let g = null;
+          try{ g = await api("/gists/"+sync.gistId); }
+          catch(e){ if(e.status === 404) sync.gistId = null; else throw e; }
+          if(g && g.files[FILE]){
+            const f = g.files[FILE];
+            const txt = f.truncated ? await (await fetch(f.raw_url, {cache:"no-store"})).text() : f.content;
+            remote = normalize(JSON.parse(txt));
+          }
+        }
+        const merged = remote ? merge(data, remote) : data;
+        const mc = canon(merged);
+        if(mc !== canon(data)){ data = merged; saveLocal(); render(); }
+        const content = JSON.stringify(shared(merged), null, 1);
+        if(!sync.gistId){
+          const g = await api("/gists", "POST", {description:"Horas Pádel: datos de la app (no borrar)", public:false, files:{[FILE]:{content}}});
+          sync.gistId = g.id;
+        } else if(!remote || mc !== canon(remote)){
+          await api("/gists/"+sync.gistId, "PATCH", {files:{[FILE]:{content}}});
+        }
+        sync.last = Date.now(); sync.err = ""; saveSync(); setSync("ok");
+      }catch(e){
+        sync.err = e.status === 401 ? "La clave no es válida o ha caducado."
+          : (e.status === 403 || e.status === 404) ? "La clave no tiene el permiso «gist»."
+          : "Sin conexión. Se sincronizará cuando vuelva internet.";
+        saveSync(); setSync("err");
+      }finally{
+        syncing = null;
+        if(syncAgain){ syncAgain = false; syncNow(); }
+      }
+    })();
+    return syncing;
+  }
+
+  function ago(t){
+    if(!t) return "";
+    const m = Math.round((Date.now()-t)/60000);
+    return m < 1 ? "ahora mismo" : m < 60 ? "hace "+m+" min" : "hace "+Math.round(m/60)+" h";
+  }
+  function setSync(st){ syncState = st; paintSync(); }
+  function paintSync(){
+    const c = $("cloud");
+    c.hidden = !sync.token;
+    c.className = "cloud "+syncState;
+    const el = $("syncState");
+    el.className = "syncstate "+syncState;
+    el.textContent = !sync.token ? "Desactivada: cada móvil guarda sus datos por separado."
+      : syncState === "busy" ? "Sincronizando…"
+      : syncState === "err" ? sync.err
+      : "Sincronizado "+ago(sync.last);
+    $("syncOff").hidden = !!sync.token;
+    $("syncOn").hidden = !sync.token;
+  }
+
+  $("syncConnect").addEventListener("click", async () => {
+    const t = $("sToken").value.trim();
+    if(!t){ alert("Pega primero la clave de GitHub."); return; }
+    sync = {token:t}; saveSync(); $("sToken").value = "";
+    await syncNow();
+  });
+  $("syncNowBtn").addEventListener("click", () => syncNow());
+  $("syncDisconnect").addEventListener("click", () => {
+    if(!confirm("Este móvil dejará de sincronizar. Los datos se quedan guardados en el móvil y en GitHub.")) return;
+    sync = {}; saveSync(); setSync("off");
+  });
+
+  // Refresca al volver a la app y cada minuto, para que los sábados se sumen solos
+  document.addEventListener("visibilitychange", () => { if(!document.hidden){ render(); syncNow(); } });
+  window.addEventListener("online", () => syncNow());
+  setInterval(() => { render(); paintSync(); }, 60000);
+  setInterval(() => { if(!document.hidden) syncNow(); }, 120000);
+
+  render();
+  paintSync();
+  syncNow();
+})();
+</script>
+</body>
+</html>
